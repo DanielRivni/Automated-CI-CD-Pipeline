@@ -13,6 +13,13 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/DanielRivni/Automated-CI-CD-Pipeline.git'
             }
         }
+        // stage('Set image version') {
+        //     steps {
+        //         script {
+                    
+        //         }
+        //     }
+        // }
 
         stage('Build Docker Image') {
             steps {
@@ -24,15 +31,21 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
+                withDockerRegistry([credentialsId: 'docker-hub-credentials']) {
                     sh 'docker push $DOCKER_IMAGE:latest'
                 }
             }
         }
 
+        // stage('Generate deployment file') {
+        //     steps {
+        //         }
+        //     }
+        // }
+
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl set image statefulset/$K8S_DEPLOYMENT my-flask-app=$DOCKER_IMAGE:latest -n $K8S_NAMESPACE'
+                sh 'kubectl -n $K8S_NAMESPACE apply -f deployment.yaml service.yaml --wait=true'
             }
         }
     }
