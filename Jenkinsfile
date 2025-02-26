@@ -18,41 +18,52 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
+                    sh 'docker build -t $DOCKER_IMAGE:$IMAGE_TAG .'
                 }
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/') {
-                        docker.image("${DOCKER_IMAGE}:${IMAGE_TAG}").push()
-                    }
+                withDockerRegistry(credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/') {
+                    sh 'docker push $DOCKER_IMAGE:$IMAGE_TAG'
                 }
             }
         }
 
-        stage('Generate Deployment and Service Files') {
+        stage('Generate Kubernetes Deployment File') {
             steps {
                 script {
-                    // Replace the image tag in the deployment.yaml and service.yaml files with the Git commit hash
-                    sh """
-                    sed 's|danielrivni/my-flask-app:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|g' deployment.yaml > deployment-temp.yaml
-                    mv deployment-temp.yaml deployment.yaml
-                    
-                    sed 's|danielrivni/my-flask-app:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|g' service.yaml > service-temp.yaml
-                    mv service-temp.yaml service.yaml
+                    def deploymentFileContent = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-flask-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-flask-app
+  template:
+    metadata:
+      labels:
+        app: my-flask-app
+    spec:
+      containers:
+      - name: my-flask-app
+        image: ${DOCKER_IMAGE}:${IMAGE_TAG}  # Dynamically use the image tag
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
                     """
+                    writeFile(file: 'generated-deployment.yaml', text: deploymentFileContent)
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    sh "kubectl -n $K8S_NAMESPACE apply -f deployment.yaml -f service.yaml --wait=true"
-                }
+                sh 'kubectl -n $K8S_NAMESPACE apply -f generated-deployment.yaml -f service.yaml --wait=true'
             }
         }
     }
