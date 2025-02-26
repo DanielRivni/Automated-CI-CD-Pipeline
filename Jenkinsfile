@@ -31,14 +31,17 @@ pipeline {
             }
         }
 
-        stage('Generate Kubernetes Deployment File') {
-            steps {
-                script {
-                    def deploymentFileContent = """
+stage('Generate Kubernetes Deployment File') {
+    steps {
+        script {
+            def deploymentFileContent = """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-flask-app
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
 spec:
   replicas: 2
   selector:
@@ -55,11 +58,12 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
-                    """
-                    writeFile(file: 'generated-deployment.yaml', text: deploymentFileContent)
-                }
-            }
+            """
+            writeFile(file: 'generated-deployment.yaml', text: deploymentFileContent)
         }
+    }
+}
+
 
         stage('Deploy to Kubernetes') {
             steps {
