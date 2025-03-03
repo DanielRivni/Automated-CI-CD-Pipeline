@@ -24,10 +24,7 @@ pipeline {
         stage('Determine Version') {
             steps {
                 script {
-                    def branchName = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-                    echo "Current branch: ${branchName}"
-
-                    if (branchName != 'main') {
+                    if (params.GIT_BRANCH != 'main') {
                         def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         env.IMAGE_TAG = "0.0.0-${shortCommit}"
                     } else {
@@ -68,7 +65,7 @@ pipeline {
         stage('Update Tag') {
             steps {
                 script {
-                    if (branchName == 'main') {
+                    if (params.GIT_BRANCH == 'main') {
                         echo "Last tag: ${lastTag}"
                         sh """
                         git tag env.image_tag
