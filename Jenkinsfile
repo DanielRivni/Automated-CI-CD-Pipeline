@@ -14,7 +14,10 @@ pipeline {
     stages {
         stage('Install Jinja2 CLI') {
             steps {
-                sh 'pip install --user jinja2-cli'
+                sh '''
+                apt-get install -y python3-pip
+                pip install --user jinja2-cli
+                '''
             }
         }
 
