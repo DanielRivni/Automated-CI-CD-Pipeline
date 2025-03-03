@@ -29,16 +29,7 @@ pipeline {
                         env.IMAGE_TAG = "0.0.0-${shortCommit}"
                     } else {
                         def lastTag = sh(script: "git describe --tags --abbrev=0", returnStdout: true).trim()
-                        echo "Last tag: ${lastTag}"
-
-                        def parts = lastTag.split('-')
-                        def baseVersion = parts[0]
-                        def lastBuildNumber = 0
-                        if (parts.size() > 1) {
-                            lastBuildNumber = parts[1].toInteger()
-                        }
-                        def newBuildNumber = lastBuildNumber + 1
-                        env.IMAGE_TAG = "${baseVersion}-${newBuildNumber}"
+                        env.IMAGE_TAG = "${lastTag}"
                     }
 
                     echo "Using image tag: ${env.IMAGE_TAG}"
@@ -61,20 +52,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Update Tag') {
-            steps {
-                script {
-                    if (params.GIT_BRANCH == 'main') {
-                        sh """
-                        git tag ${env.IMAGE_TAG}
-                        git push origin ${env.IMAGE_TAG}
-                        """
-                    }
-                }
-            }
-        }
-
 
         stage('Render Jinja2 Template') {
             steps {
