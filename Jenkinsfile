@@ -66,14 +66,11 @@ pipeline {
             steps {
                 script {
                     if (params.GIT_BRANCH == 'main') {
-                        echo "Last tag: ${lastTag}"
                         sh """
-                        git tag env.image_tag
-                        git push origin env.image_tag
+                        git tag ${env.IMAGE_TAG}
+                        git push origin ${env.IMAGE_TAG}
                         """
                     }
-
-                    echo "Using image tag: ${env.IMAGE_TAG}"
                 }
             }
         }
