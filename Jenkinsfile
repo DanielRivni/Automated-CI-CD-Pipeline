@@ -16,7 +16,7 @@ pipeline {
             steps {
                 sh '''
                 apt-get install -y python3-pip
-                pip install --user jinja2-cli
+                pip3 install --user jinja2-cli
                 '''
             }
         }
