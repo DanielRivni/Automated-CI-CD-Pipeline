@@ -12,14 +12,6 @@ pipeline {
     }
 
     stages {
-        stage('Install Jinja2 CLI') {
-            steps {
-                sh '''
-                apt-get install -y python3-pip
-                pip3 install --user jinja2-cli
-                '''
-            }
-        }
 
         stage('Checkout') {
             steps {
@@ -77,6 +69,10 @@ pipeline {
             steps {
                 script {
                     sh """
+                      python3 -m venv /opt/venv
+                      source /opt/venv/bin/activate
+                      pip3 install jinja2-cli
+
                       jinja2 deployment.yaml.j2 --format=yaml \\
                         -D docker_image=${env.DOCKER_IMAGE} \\
                         -D image_tag=${env.IMAGE_TAG} > generated-deployment.yaml
