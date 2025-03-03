@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Which branch to build?')
+    }
+
     environment {
         DOCKER_IMAGE   = "danielrivni/my-flask-app"
         K8S_DEPLOYMENT = "my-flask-app"
@@ -16,38 +20,32 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/DanielRivni/Automated-CI-CD-Pipeline.git'
+                script {
+                    git branch: "${params.GIT_BRANCH}", url: 'https://github.com/DanielRivni/Automated-CI-CD-Pipeline.git'
+                }
             }
         }
 
         stage('Determine Version') {
             steps {
                 script {
-                    // 1. Identify the current branch name
                     def branchName = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-                    echo "Branch name: ${branchName}"
+                    echo "Current branch: ${branchName}"
 
-                    // 2. If NOT 'main', use a dev version: 0.0.0-<shortCommit>
                     if (branchName != 'main') {
                         def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         env.IMAGE_TAG = "0.0.0-${shortCommit}"
-
                     } else {
-                        // 3. If branch == main, get the last annotated tag.
-                        //    Then increment the part after the dash.
                         def lastTag = sh(script: "git describe --tags --abbrev=0", returnStdout: true).trim()
-                        echo "Last tag on main: ${lastTag}"
+                        echo "Last tag: ${lastTag}"
 
                         def parts = lastTag.split('-')
                         def baseVersion = parts[0]
                         def lastBuildNumber = 0
-
                         if (parts.size() > 1) {
                             lastBuildNumber = parts[1].toInteger()
                         }
-
                         def newBuildNumber = lastBuildNumber + 1
-
                         env.IMAGE_TAG = "${baseVersion}-${newBuildNumber}"
                     }
 
