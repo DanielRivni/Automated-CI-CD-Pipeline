@@ -65,12 +65,29 @@ pipeline {
             }
         }
 
+        stage('Update Tag') {
+            steps {
+                script {
+                    if (branchName == 'main') {
+                        echo "Last tag: ${lastTag}"
+                        sh """
+                        git tag env.image_tag
+                        git push origin env.image_tag
+                        """
+                    }
+
+                    echo "Using image tag: ${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+
         stage('Render Jinja2 Template') {
             steps {
                 script {
                     sh """
                       python3 -m venv /opt/venv
-                      source /opt/venv/bin/activate
+                      . /opt/venv/bin/activate
                       pip3 install jinja2-cli
 
                       jinja2 deployment.yaml.j2 --format=yaml \\
